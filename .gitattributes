@@ -1,0 +1,38 @@
+# 统一换行符；二进制资源显式声明，避免 Git 做文本转换导致 Unity 资源损坏
+* text=auto
+
+# Unity 本工程使用二进制序列化，这些文件必须按二进制处理
+*.unity    binary
+*.prefab   binary
+*.asset    binary
+*.controller binary
+*.anim     binary
+*.mat      binary
+*.cubemap  binary
+*.meta     text
+
+# 常见二进制资源
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.psd      binary
+*.tga      binary
+*.gif      binary
+*.mp3      binary
+*.ogg      binary
+*.wav      binary
+*.ttf      binary
+*.otf      binary
+*.dll      binary
+*.apk      binary
+*.exe      binary
+*.zip      binary
+
+# 文本资源按 LF 规范化
+*.cs       text diff=csharp
+*.shader   text
+*.json     text
+*.txt      text
+*.md       text
+*.xml      text
+*.yml      text

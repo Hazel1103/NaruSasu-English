@@ -1,0 +1,50 @@
+# ---- Unity 生成目录（不要提交）----
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# ---- 打包产物（上传 Release 而不是提交到仓库）----
+[Rr]elease/
+*.apk
+*.aab
+*.exe
+*.zip
+
+# ---- IDE / 工程文件 ----
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Unity 自动生成的设置 ----
+ProjectSettings/MemorySettings.asset
+ProjectSettings/VersionControlSettings.asset
+ProjectSettings/SceneTemplateSettings.json
+Packages/packages-lock.json
+
+# ---- 崩溃报告 ----
+sysinfo.txt
+crashlytics-build.properties
