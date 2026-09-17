@@ -16,37 +16,23 @@ public class Enemy : MonoBehaviour
     private Text[] vocText;
     private bool arrive = false;//是否到了 塔下
     private GameController gameCtrl = null;
+    private bool damageEventFired = false;
+    private Coroutine damageFallbackCoroutine = null;
+    private Coroutine deathFallbackCoroutine = null;
     void Awake()
     {
         animCtrl = GetComponent<Animator>();
+        ReinitAnimator();
+    }
 
-        var animClips = animCtrl.runtimeAnimatorController.animationClips;
-        foreach (var clip in animClips)
-        {
-            //如果动画片段上已经有响应事件了则直接返回 避免重复添加造成多次响应
-            if (clip.events.Length > 0)
-                break;
-            switch (clip.name)
-            {
-                case "damage":
-                    {
-                        AnimationEvent animEvent = new AnimationEvent();
-                        animEvent.time = clip.length;
-                        animEvent.functionName = "DamageAnimEndCallBack";
-                        clip.AddEvent(animEvent);
-                    }
-                    break;
-                case "attack":
-                    {
-                        AnimationEvent animEvent = new AnimationEvent();
-                        animEvent.time = clip.length;
-                        animEvent.functionName = "AttackAnimEndCallBack";
-                        clip.AddEvent(animEvent);
-                    }
-                    break;
-            }
-        }
-
+    /// <summary>
+    /// 重新初始化动画：进入 move 状态。
+    /// 动画结束事件现在由 RunAnimSetup 在生成动画片段时直接写入，
+    /// 避免运行时调用编辑器 API，也避免 clip 长度变化后事件点错位。
+    /// </summary>
+    public void ReinitAnimator()
+    {
+        if (animCtrl == null) return;
         animCtrl.SetBool(Conf.moveAnim, true);
     }
 
@@ -157,6 +143,13 @@ public class Enemy : MonoBehaviour
     }
     void DamageAnimEndCallBack()
     {
+        if (damageEventFired) return;
+        damageEventFired = true;
+        ApplyDamageResult();
+    }
+
+    private void ApplyDamageResult()
+    {
         animCtrl.SetBool(Conf.damageAnim, false);
         if (vocList.Count > 0)
             vocList.RemoveAt(0);
@@ -168,6 +161,10 @@ public class Enemy : MonoBehaviour
             var vocWin = transform.Find("VocWin");
             if (vocWin)
                 vocWin.gameObject.SetActive(false);
+            // 保险：1.5 秒后还没被 Update/事件销毁，强制销毁。
+            if (deathFallbackCoroutine != null)
+                StopCoroutine(deathFallbackCoroutine);
+            deathFallbackCoroutine = StartCoroutine(DeathFallback());
         }
         else
         {
@@ -177,16 +174,46 @@ public class Enemy : MonoBehaviour
         }
         gameCtrl.UpdateRemainVocCount();
     }
+
     void DeathAnimEndCallBack()
     {
         //如果敌人挂了从列表中移除
         Destroy(gameObject);
         gameCtrl.UpdateRemainEnemyList(this);
     }
+
     public void Damage()
     {
+        damageEventFired = false;
         animCtrl.SetBool(Conf.damageAnim, true);
         animCtrl.SetBool(Conf.moveAnim, false);
+        // 保险：如果动画事件没触发，0.4 秒后强制走伤害结算。
+        if (damageFallbackCoroutine != null)
+            StopCoroutine(damageFallbackCoroutine);
+        damageFallbackCoroutine = StartCoroutine(DamageFallback());
+    }
+
+    private IEnumerator DamageFallback()
+    {
+        yield return new WaitForSeconds(0.4f);
+        if (!damageEventFired)
+        {
+            Debug.LogWarning("[Enemy] damage 动画事件未触发，启用强制结算：" + gameObject.name);
+            ApplyDamageResult();
+        }
+        damageFallbackCoroutine = null;
+    }
+
+    private IEnumerator DeathFallback()
+    {
+        yield return new WaitForSeconds(1.5f);
+        if (gameObject != null)
+        {
+            Debug.LogWarning("[Enemy] death 未正常销毁，启用强制销毁：" + gameObject.name);
+            gameCtrl.UpdateRemainEnemyList(this);
+            Destroy(gameObject);
+        }
+        deathFallbackCoroutine = null;
     }
     //被冰冻技能击中时冻结
     public void Freeze()

@@ -1,4 +1,4 @@
-# NaruSasu English（鸣佐英语）· 塔防背单词（Naruto &amp; Sasuke Spelling TD）
+# 鸣佐英语 · 塔防背单词（Naruto &amp; Sasuke Spelling TD）
 
 > 一个「塔防 + 英语单词拼写」的小游戏。在经典单词拼写玩法之上，接入了**鸣人 / 佐助双角色模式**：
 > 角色主题配色、答题台词、答对音效、头像，以及**进攻小怪的专属形象**。
@@ -56,8 +56,8 @@
 
 | 平台 | 获取方式 |
 |---|---|
-| Windows | 下载 Release 中的 `NaruSasu English.exe`，双击运行（保持 `NaruSasu English_Data` 同目录） |
-| Android | 安装 Release 中的 `NaruSasu English_ARM64.apk`（需允许「安装未知来源应用」） |
+| Windows | 解压 `鸣佐英语_Windows版.zip`，双击 `鸣佐英语.exe`（保持 `鸣佐英语_Data` 同目录） |
+| Android | 安装 `鸣佐英语.apk`（需允许「安装未知来源应用」） |
 
 ### 从源码构建
 
@@ -65,8 +65,8 @@
 1. 用 Unity Hub 安装 Unity 2022.3.1f1c1（含 Windows Build Support；
    如需 APK 再勾选 Android Build Support + SDK/NDK + OpenJDK）
 2. Hub 里 Add → 选择本工程目录，等待首次导入完成
-3.    菜单 Build/打包 Windows (x64)              → Build/Windows/NaruSasu English.exe
-   菜单 Build/打包 Android APK (IL2CPP ARM64) → Build/Android/NaruSasu English_ARM64.apk
+3. 菜单 Build/打包 Windows (x64)    → Build/Windows/鸣佐英语.exe
+   菜单 Build/打包 Android APK      → Build/Android/鸣佐英语.apk
    菜单 Build/打包 全部 (Win + APK)
 ```
 
@@ -75,7 +75,7 @@
 > 构建过程日志见 `<工程>/Build/package-log.txt`。
 
 > ⚠️ **Android 构建注意**：Unity 的 Android 工具链对**非 ASCII 工程路径**敏感。
-> 若工程放在含中文的目录下且 Gradle 报错，请把工程复制到纯英文路径（如 `E:\NaruSasuEnglish`）后再构建 APK。
+> 若工程放在含中文的目录下且 Gradle 报错，请把工程复制到纯英文路径（如 `E:\SpellingGameBuild`）后再构建 APK。
 
 ## 五、目录结构
 

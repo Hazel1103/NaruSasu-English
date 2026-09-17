@@ -48,3 +48,6 @@ Packages/packages-lock.json
 # ---- 崩溃报告 ----
 sysinfo.txt
 crashlytics-build.properties
+
+# ---- WorkBuddy 内部工作区（不提交）----
+.workbuddy/

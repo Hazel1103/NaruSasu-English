@@ -12,14 +12,18 @@ using UnityEngine.UI;
 /// </summary>
 public static class VocWinLayout
 {
-    /// <summary>单词框高度倍率（原 97 → 约 194）。</summary>
-    public const float HeightScale = 2.0f;
-    /// <summary>单词框宽度倍率（原 241 → 约 301），长单词不再挤成一团。</summary>
-    public const float WidthScale = 1.25f;
+    /// <summary>单词框高度倍率（原 97 → 约 388）。</summary>
+    public const float HeightScale = 4.0f;
+    /// <summary>单词框宽度倍率（原 241 → 约 603），长单词不再挤成一团。</summary>
+    public const float WidthScale = 2.5f;
+    /// <summary>整个单词框的整体缩放（解决在镜头里被压得过小的问题）。</summary>
+    public const float BoxScale = 2.5f;
     /// <summary>英文字号倍率（原 14）。</summary>
-    public const float EnFontScale = 2.4f;
+    public const float EnFontScale = 6.0f;
     /// <summary>中文字号倍率（原 14）。</summary>
-    public const float ZhFontScale = 2.0f;
+    public const float ZhFontScale = 5.0f;
+    /// <summary>文本两侧留白。</summary>
+    public const float TextPadding = 40f;
 
     private sealed class Applied : MonoBehaviour { }
 
@@ -41,32 +45,52 @@ public static class VocWinLayout
             oldSize = boxRect.sizeDelta;
             // pivot 在底边中点，加高只会向上长，不会压到小怪身上。
             boxRect.sizeDelta = new Vector2(oldSize.x * WidthScale, oldSize.y * HeightScale);
+            // 额外整体放大，避免在镜头里被压成看不见的小点。
+            boxRect.localScale = new Vector3(BoxScale, BoxScale, 1f);
         }
 
         Text en = FindText(box, "en");
         Text zh = FindText(box, "zh");
+        float maxTextWidth = 0f;
         if (en != null)
         {
             en.fontSize = Mathf.Max(en.fontSize, Mathf.RoundToInt(en.fontSize * EnFontScale));
             en.alignment = TextAnchor.MiddleCenter;
-            en.horizontalOverflow = HorizontalWrapMode.Wrap;
+            en.horizontalOverflow = HorizontalWrapMode.Overflow;
             en.verticalOverflow = VerticalWrapMode.Overflow;
+            StripNewlines(en);
+            maxTextWidth = Mathf.Max(maxTextWidth, en.preferredWidth);
         }
         if (zh != null)
         {
             zh.fontSize = Mathf.Max(zh.fontSize, Mathf.RoundToInt(zh.fontSize * ZhFontScale));
-            zh.alignment = TextAnchor.UpperCenter;
-            zh.horizontalOverflow = HorizontalWrapMode.Wrap;
+            zh.alignment = TextAnchor.MiddleCenter;
+            zh.horizontalOverflow = HorizontalWrapMode.Overflow;
             zh.verticalOverflow = VerticalWrapMode.Overflow;
+            StripNewlines(zh);
+            maxTextWidth = Mathf.Max(maxTextWidth, zh.preferredWidth);
         }
+
+        // 根据实际文字宽度再撑开一点框，避免溢出或被强制换行。
+        if (boxRect != null && maxTextWidth > 0f)
+        {
+            float wantWidth = maxTextWidth * WidthScale + TextPadding;
+            if (boxRect.sizeDelta.x < wantWidth)
+                boxRect.sizeDelta = new Vector2(wantWidth, boxRect.sizeDelta.y);
+        }
+
+        // 删掉/隐藏中文释义底下的红线、下划线、分隔线等装饰。
+        RemoveDecorativeLines(box);
 
         vocWin.AddComponent<Applied>();
         Debug.Log(string.Format(
-            "[单词框] 尺寸 {0}x{1} -> {2}x{3}  英文字号={4} 中文字号={5}",
+            "[单词框] 尺寸 {0}x{1} -> {2}x{3} scale={4} 英文字号={5} 中文字号={6} 最大文本宽={7:F0}",
             oldSize.x, oldSize.y,
             boxRect != null ? boxRect.sizeDelta.x : 0f,
             boxRect != null ? boxRect.sizeDelta.y : 0f,
-            en != null ? en.fontSize : 0, zh != null ? zh.fontSize : 0));
+            BoxScale,
+            en != null ? en.fontSize : 0, zh != null ? zh.fontSize : 0,
+            maxTextWidth));
     }
 
     private static Text FindText(Transform parent, string childName)
@@ -82,5 +106,53 @@ public static class VocWinLayout
         if (childName == "en" && all.Length > 0) return all[0];
         if (childName == "zh" && all.Length > 1) return all[1];
         return null;
+    }
+
+    /// <summary>去掉文本里的显式换行符，让单词和释义都不折行。</summary>
+    private static void StripNewlines(Text text)
+    {
+        if (text == null) return;
+        text.text = text.text.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
+    }
+
+    /// <summary>隐藏/删除红线、下划线、分隔线等装饰性 UI。</summary>
+    private static void RemoveDecorativeLines(Transform box)
+    {
+        if (box == null) return;
+        string[] lineKeywords = new[] { "line", "split", "divider", "underline", "redline", "红线", "分隔", "下划线", "横线", "线" };
+        foreach (Transform child in box.GetComponentsInChildren<Transform>(true))
+        {
+            if (child == box) continue;
+            string lower = child.gameObject.name.ToLowerInvariant();
+            bool matched = false;
+            foreach (string kw in lineKeywords)
+            {
+                if (lower.Contains(kw))
+                {
+                    matched = true;
+                    break;
+                }
+            }
+
+            // 即使名字不匹配，也按外观判断：红色/橙色的细长 Image 就当作装饰线隐藏。
+            if (!matched)
+            {
+                var img = child.GetComponent<Image>();
+                var rect = child as RectTransform;
+                if (img != null && rect != null)
+                {
+                    Color c = img.color;
+                    bool reddish = c.r > 0.55f && c.g < 0.45f && c.b < 0.45f;
+                    bool thinHorizontal = rect.sizeDelta.y < 15f && rect.sizeDelta.x > rect.sizeDelta.y * 3f;
+                    matched = reddish && thinHorizontal;
+                }
+            }
+
+            if (matched)
+            {
+                child.gameObject.SetActive(false);
+                Debug.Log("[单词框] 已隐藏装饰线：" + child.gameObject.name);
+            }
+        }
     }
 }
